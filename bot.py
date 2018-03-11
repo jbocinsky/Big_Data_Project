@@ -2,10 +2,12 @@ import gym
 import numpy as np
 import random as rd
 import math
+import pydot
 from collections import deque
 from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.layers import Dense, Conv1D, Dropout, Flatten
+from keras.utils import plot_model
 
 Gam = 0.93
 ep_min = 0.01
@@ -37,7 +39,11 @@ class Agent:
         #self.Nnet.add(Dropout(0.01))
         self.Nnet.add(Dense(24, activation='relu'))
 
-        #Fifth Output Layer
+        #Fifth Hidden layer
+        #self.Nnet.add(Dropout(0.01))
+        self.Nnet.add(Dense(12, activation='relu'))
+
+        #Sixth Output Layer
         #self.Nnet.add(Dropout(0.01))
         self.Nnet.add(Dense(self.acSize, activation='linear'))
 
@@ -92,4 +98,5 @@ if __name__ == "__main__":
     print('')
     print('***************************************')
     bot = Agent(acSize, obsSize)
+    plot_model(bot, to_file='model.png', show_shapes=True, show_layer_names=True)
     train()
