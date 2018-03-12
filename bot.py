@@ -92,7 +92,6 @@ def train(game):
                 break
 
         minB = rd.sample(bot.memory, min(len(bot.memory), batch_size))
-        #for d, next, st, rew, act in minB:
         for act, rew, st, next, d in minB:
             if d:
                 tar = rew
@@ -133,10 +132,11 @@ if __name__ == "__main__":
     #create architecture
     bot = Agent(acSize, obsSize)
     #plot_model(bot, to_file='model.png', show_shapes=True, show_layer_names=True)
-    
+
     #train architecture
     train(game)
 
     # bot.loadNN('./save/nnWeights.h5')
+
 
 
