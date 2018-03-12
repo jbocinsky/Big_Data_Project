@@ -3,6 +3,9 @@ import numpy as np
 import random as rd
 import math
 import pydot
+import sys
+
+from gym import wrappers
 from collections import deque
 from keras.models import Sequential
 from keras.optimizers import Adam
@@ -12,7 +15,7 @@ from keras.utils import plot_model
 Gam = 0.93
 ep_min = 0.01
 ep_decay = 1.0005
-Iter = 1000
+Iter = 5000
 LRate = 0.001
 d = False
 batch_size = 40
@@ -51,27 +54,43 @@ class Agent:
         self.Nnet.compile(loss='mse', optimizer=Adam(lr=LRate))
 
 
-def train():
+    # def loadNN(self, name):
+    #         self.Nnet.load_weights(name)
+
+    # def saveNN(self, name):
+    #         self.Nnet.save_weights(name)
+
+def train(game):
     for i in range(Iter):
         obs = env.reset()
         obs = np.reshape(obs, [1 , obsSize])
+        
         for time in range(600):
-            #env.render()
+            env.render()
+
             if np.random.rand() > bot.eps:
                 act = np.argmax(bot.Nnet.predict(obs)[0])
             else:
                 act = rd.randrange(bot.acSize)
-            next, rew, d, _ = env.step(act)
+
+            if(game == 'Pendulum-v0'):
+                next, rew, d, _ = env.step([act])
+            else:
+                next, rew, d, _ = env.step(act)
             if not d:
                 rew = rew
             else:
                 rew = -10
+
             next = np.reshape(next, [1, obsSize])
             bot.memory.append((act, rew, obs, next, d))
             obs = next
+
             if d:
-                print("iteration: ",i,"/",Iter,"score:",time,"eps:",bot.eps)
+                print("iteration:", i, "/", Iter, "   Score:", time, "   Eps:", bot.eps)
+                sys.stdout.flush()
                 break
+
         minB = rd.sample(bot.memory, min(len(bot.memory), batch_size))
         #for d, next, st, rew, act in minB:
         for act, rew, st, next, d in minB:
@@ -86,10 +105,23 @@ def train():
             if (ep_min - bot.eps) < 0:
                 bot.eps /= ep_decay
 
+    #save final NN
+    # bot.saveNN('./save/nnWeights.h5')
+
+    
+
 if __name__ == "__main__":
-    env = gym.make('CartPole-v1')
+    # game = 'CartPole-v1'
+    # game = 'Pendulum-v0'
+    game = 'MountainCar-v0'
+    # game = 'Acrobot-v1'
+    env = gym.make(game)
     obsSize = env.observation_space.shape[0]
-    acSize = env.action_space.n
+    if(game != 'Pendulum-v0'):
+        acSize = env.action_space.n
+    else:
+        acSize = env.action_space.shape[0]
+
     print('***************************************')
     print('')
     print('Game Environment Information')
@@ -97,6 +129,14 @@ if __name__ == "__main__":
     print('\tOutput/Action size:', acSize)
     print('')
     print('***************************************')
+    
+    #create architecture
     bot = Agent(acSize, obsSize)
-    plot_model(bot, to_file='model.png', show_shapes=True, show_layer_names=True)
-    train()
+    #plot_model(bot, to_file='model.png', show_shapes=True, show_layer_names=True)
+    
+    #train architecture
+    train(game)
+
+    # bot.loadNN('./save/nnWeights.h5')
+
+
