@@ -16,7 +16,7 @@ from keras.utils import plot_model
 Gam = 0.99
 ep_min = 0.01
 ep_decay = 1.00015
-episodes = 500
+episodes = 1000
 maxGameFrames = 1000
 LRate = 0.001
 d = False
@@ -41,25 +41,28 @@ class Agent:
     def constructModel(self):
         #First Hidden layer (Input going to Hidden)
         model = Sequential([Dense(24, input_dim=self.stateSize)])
+        model.add(Dropout(0.2))
 
-        #Second Hidden layer
-        #self.Nnet.add(Dropout(0.01))
-        #self.Nnet.add(Dense(36, activation='relu'))
+        # Second Hidden layer
+        model.add(Dense(36, activation='relu'))
+        model.add(Dropout(0.2))
 
-        #Third Hidden layer
-        #self.Nnet.add(Dropout(0.01))
-        #self.Nnet.add(Dense(24, activation='relu'))
 
-        #Fourth Hidden layer
-        #self.Nnet.add(Dropout(0.01))
-        # self.Nnet.add(Dense(18, activation='relu'))
+        # Third Hidden layer
+        model.add(Dense(48, activation='relu'))
+        model.add(Dropout(0.2))
+
+
+        # Fourth Hidden layer
+        model.add(Dense(36, activation='relu'))
+        model.add(Dropout(0.2))
+
 
         #Fifth Hidden layer
-        #self.Nnet.add(Dropout(0.01))
         model.add(Dense(24, activation='relu'))
+        model.add(Dropout(0.2))
 
         #Sixth Output Layer
-        #self.Nnet.add(Dropout(0.01))
         model.add(Dense(self.acSize, activation='linear', kernel_initializer='he_uniform'))
 
         model.summary()
@@ -156,7 +159,7 @@ def playFinalGame(game, bot):
     print('Final game score:', score)
 
 
-def train(game, bot):
+def train(game, bot, renderTraining):
     #Initialize for plotting
     times = []
     scores = []
@@ -168,7 +171,8 @@ def train(game, bot):
         state = np.reshape(state, [1 , stateSize])
         
         while not done:
-            # env.render()
+            if renderTraining:
+                env.render()
 
             #Get an action from learned NN action
             if np.random.rand() > bot.eps:
@@ -245,7 +249,7 @@ def train(game, bot):
 
                 if(game == 'MountainCar-v0'):
                     #reward for getting to the top of the hill is 10, make sure last 15 made it to top
-                    if all(i >= 10 for i in scores[-15:]):
+                    if all(i >= 10 for i in scores[-20:]):
                         print("Completed training!")
                         return bot, scores, times
 
@@ -264,10 +268,15 @@ def train(game, bot):
     
 
 if __name__ == "__main__":
-    game = 'CartPole-v1'
+
+    #Settings:
+    # game = 'CartPole-v1'
     # game = 'Pendulum-v0'
-    # game = 'MountainCar-v0'
+    game = 'MountainCar-v0'
     # game = 'Acrobot-v1'
+
+    renderTraining = False
+
     env = gym.make(game)
     env._max_episodes = maxGameFrames
     stateSize = env.observation_space.shape[0]
@@ -277,6 +286,9 @@ if __name__ == "__main__":
         acSize = env.action_space.shape[0]
 
     print('***************************************')
+    print('')
+    print('Playing', game)
+    print('Wish me luck :)')
     print('')
     print('Game Environment Information')
     print('\tInput/Environment size:', stateSize)
@@ -289,7 +301,7 @@ if __name__ == "__main__":
     #plot_model(bot, to_file='model.png', show_shapes=True, show_layer_names=True)
 
     #train architecture
-    bot, scores, times = train(game, bot)
+    bot, scores, times = train(game, bot, renderTraining)
 
     for i in range(10):
         playFinalGame(game, bot)
