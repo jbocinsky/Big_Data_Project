@@ -15,12 +15,12 @@ from keras.utils import plot_model
 
 Gam = 0.99
 ep_min = 0.01
-ep_decay = 1.00015
+ep_decay = 1.0003
 episodes = 1000
 maxGameFrames = 1000
 LRate = 0.001
 d = False
-batchSize = 64
+batchSize = 10
 
 class Agent:
     def __init__(self, acSize, stateSize):
@@ -41,26 +41,26 @@ class Agent:
     def constructModel(self):
         #First Hidden layer (Input going to Hidden)
         model = Sequential([Dense(24, input_dim=self.stateSize)])
-        model.add(Dropout(0.2))
+        # model.add(Dropout(0.2))
 
         # Second Hidden layer
         model.add(Dense(36, activation='relu'))
-        model.add(Dropout(0.2))
+        # model.add(Dropout(0.2))
 
 
         # Third Hidden layer
         model.add(Dense(48, activation='relu'))
-        model.add(Dropout(0.2))
+        # model.add(Dropout(0.2))
 
 
         # Fourth Hidden layer
         model.add(Dense(36, activation='relu'))
-        model.add(Dropout(0.2))
+        # model.add(Dropout(0.2))
 
 
-        #Fifth Hidden layer
+        # Fifth Hidden layer
         model.add(Dense(24, activation='relu'))
-        model.add(Dropout(0.2))
+        # model.add(Dropout(0.2))
 
         #Sixth Output Layer
         model.add(Dense(self.acSize, activation='linear', kernel_initializer='he_uniform'))
@@ -157,16 +157,21 @@ def playFinalGame(game, bot):
         score += reward
 
     print('Final game score:', score)
+    return score
 
 
 def train(game, bot, renderTraining):
     #Initialize for plotting
     times = []
     scores = []
+    positions = []
+    steps = []
     
     for epi in range(episodes):
         done = False
         score = 0
+        step = 0
+        position = 0
         state = env.reset()
         state = np.reshape(state, [1 , stateSize])
         
@@ -180,11 +185,14 @@ def train(game, bot, renderTraining):
                 act = np.argmax(qValue[0])
             #Get a random action
             else:
-                act = rd.randrange(bot.acSize)
+                if(game == 'Pendulum-v0'):
+                    act = rd.uniform(-2, 2)
+                else:
+                    act = rd.randrange(bot.acSize)
 
             #Take the action    
             if(game == 'Pendulum-v0'):
-                nextState, reward, done, _ = env.step([act])
+                nextState, reward, done, _ = env.step(np.array([act]))
             else:
                 nextState, reward, done, _ = env.step(act)
 
@@ -219,6 +227,12 @@ def train(game, bot, renderTraining):
             #Use miniBatch from memory to train model
             bot.trainOnlineModel()
 
+            step += 1
+            if(game == 'MountainCar-v0'):
+                tempPosition = state[0][0]
+                if(tempPosition > position):
+                    position = tempPosition
+
             score += reward
             state = nextState
 
@@ -239,19 +253,26 @@ def train(game, bot, renderTraining):
                 print("episode:", epi, "/", episodes, "   Score:", score, "   Eps:", bot.eps)
                 sys.stdout.flush()
                 scores.append(score)
+                positions.append(position)
+                steps.append(step)
                 times.append(epi)
 
                 if(game == 'CartPole-v1'):
                     #if succeeded 10 times in a row
                     if np.mean(scores[-min(10, len(scores)):]) > 495:
                         print("Completed training!")
-                        return bot, scores, times
+                        return bot, scores, positions, steps, times
 
                 if(game == 'MountainCar-v0'):
                     #reward for getting to the top of the hill is 10, make sure last 15 made it to top
                     if all(i >= 10 for i in scores[-20:]):
                         print("Completed training!")
-                        return bot, scores, times
+                        return bot, scores, positions, steps, times
+
+                if(game == 'Pendulum-v0'):
+                    if all(i >= -100 for i in scores[-20:]):
+                        print("Completed training!")
+                        return bot, scores, positions, steps, times
 
                     # if np.mean(scores[-min(15, len(scores)):]) > 13:
                     #     print("Completed training!")
@@ -259,7 +280,7 @@ def train(game, bot, renderTraining):
 
     print("All:", episodes, "completed")
     print("Did not find optimal solution")
-    return bot, scores, times
+    return bot, scores, positions, steps, times
 
     
     #save final NN
@@ -270,9 +291,9 @@ def train(game, bot, renderTraining):
 if __name__ == "__main__":
 
     #Settings:
-    # game = 'CartPole-v1'
+    game = 'CartPole-v1'
     # game = 'Pendulum-v0'
-    game = 'MountainCar-v0'
+    # game = 'MountainCar-v0'
     # game = 'Acrobot-v1'
 
     renderTraining = False
@@ -284,6 +305,8 @@ if __name__ == "__main__":
         acSize = env.action_space.n
     else:
         acSize = env.action_space.shape[0]
+
+    print('AcSize: ', acSize)
 
     print('***************************************')
     print('')
@@ -301,18 +324,42 @@ if __name__ == "__main__":
     #plot_model(bot, to_file='model.png', show_shapes=True, show_layer_names=True)
 
     #train architecture
-    bot, scores, times = train(game, bot, renderTraining)
+    bot, scores, positions, steps, times = train(game, bot, renderTraining)
 
+    finalScores = []
     for i in range(10):
-        playFinalGame(game, bot)
+        finalScore = playFinalGame(game, bot)
+        finalScores.append(finalScore)
 
-    #Print results
+    print(finalScores)
+
+    finalScoresMean = np.mean(finalScores)
+    print('Average final score:', finalScoresMean)
+
+
+    #Plot results
     plt.plot(times, scores)
     plotTitle = game + ' Training Scores'
     plt.title(plotTitle)
     plt.xlabel('iterations')
     plt.ylabel('scores')
     plt.show()
+
+    if(game == 'MountainCar-v0'):
+        plt.plot(times, positions)
+        plotTitle = game + ' Position'
+        plt.title(plotTitle)
+        plt.xlabel('iterations')
+        plt.ylabel('position')
+        plt.show()
+
+        plt.plot(times, steps)
+        plotTitle = game + ' Number of steps to win'
+        plt.title(plotTitle)
+        plt.xlabel('iterations')
+        plt.ylabel('steps')
+        plt.show()
+
     # bot.loadNN('./save/nnWeights.h5')
 
 
