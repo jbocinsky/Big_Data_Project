@@ -29,67 +29,13 @@ class Agent:
         self.acSize = acSize
         self.eps = 1.0
         self.startTraining = 1000
-
-        #Make online and target model
-#        self_actor_obs_space, self.actor_critic = self.create_actor_model()
-#        self_actor_obs_space, self.actor_critic = self.create_actor_model()
-
-        
         self.onlineModel = self.constructModel()
         self.targetModel = self.constructModel()
 
         #Copy weights from online to target model
         self.updateTargetModel()
         
-#    def create_actor_model(self):
-#        #First Hidden layer (Input going to Hidden)
-#        input = Input(shape = self.env.observation_space.shape)
-#        model = Sequential([Dense(24, activation='relu', shape = self.env.observation_space.shape)])
-#        # model.add(Dropout(0.2))
-#
-#        # Second Hidden layer
-#        model.add(Dense(36, activation='relu'))
-#        # model.add(Dropout(0.2))
-#
-#
-#        # Third Hidden layer
-#        model.add(Dense(24, activation='relu'))
-#        # model.add(Dropout(0.2))
-#
-#
-##        #Sixth Output Layer
-#        model.add(Dense(self.acSize, activation='linear', kernel_initializer='he_uniform'))
-#
-##        model.summary()
-#        #mean square error
-#        model.compile(loss='mse', optimizer=Adam(lr=LRate))
-#        return input, model
 
-#    def create_critic_model(self):
-#        #First Hidden layer (Input going to Hidden)
-#        input = Input(shape = self.env.observation_space.shape)
-#        model = Sequential([Dense(24, activation='relu')(input)])
-#        # model.add(Dropout(0.2))
-#
-#        # Second Hidden layer
-#        model.add(Dense(36, activation='relu'))
-#        # model.add(Dropout(0.2))
-#        act_in = Input(shape = self.env.observation_space.shape)
-#
-#
-#
-#        # Third Hidden layer
-#        model.add(Dense(24, activation='relu'))
-#        # model.add(Dropout(0.2))
-#
-#
-##        #Sixth Output Layer
-#        model.add(Dense(self.acSize, activation='linear', kernel_initializer='he_uniform'))
-#
-##        model.summary()
-#        #mean square error
-#        model.compile(loss='mse', optimizer=Adam(lr=LRate))
-#        return input, act_in, model
 
     def constructModel(self):
         #First Hidden layer (Input going to Hidden)
@@ -326,7 +272,7 @@ def train(game, bot, renderTraining):
                         return bot, scores, positions, steps, times
 
                 if(game == 'Pendulum-v0'):
-                    if all(i >= -100 for i in scores[-20:]):
+                    if all(i >= -200 for i in scores[-20:]):
                         print("Completed training!")
                         return bot, scores, positions, steps, times
 
@@ -394,28 +340,28 @@ if __name__ == "__main__":
     print('Average final score:', finalScoresMean)
 
 
-#    #Plot results
-#    plt.plot(times, scores)
-#    plotTitle = game + ' Training Scores'
-#    plt.title(plotTitle)
-#    plt.xlabel('iterations')
-#    plt.ylabel('scores')
-#    plt.show()
+    #Plot results
+    plt.plot(times, scores)
+    plotTitle = game + ' Training Scores'
+    plt.title(plotTitle)
+    plt.xlabel('iterations')
+    plt.ylabel('scores')
+    plt.show()
 
     if(game == 'MountainCar-v0'):
-#        plt.plot(times, positions)
-#        plotTitle = game + ' Position'
-#        plt.title(plotTitle)
-#        plt.xlabel('iterations')
-#        plt.ylabel('position')
-#        plt.show()
-#
-#        plt.plot(times, steps)
-#        plotTitle = game + ' Number of steps to win'
-#        plt.title(plotTitle)
-#        plt.xlabel('iterations')
-#        plt.ylabel('steps')
-#        plt.show()
+        plt.plot(times, positions)
+        plotTitle = game + ' Position'
+        plt.title(plotTitle)
+        plt.xlabel('iterations')
+        plt.ylabel('position')
+        plt.show()
+
+        plt.plot(times, steps)
+        plotTitle = game + ' Number of steps to win'
+        plt.title(plotTitle)
+        plt.xlabel('iterations')
+        plt.ylabel('steps')
+        plt.show()
 
         plt.plot(scores, steps)
         plotTitle = game + ' Score per steps'
