@@ -102,11 +102,16 @@ class Agent:
 
         for obs in range(numObservations):
             if done[obs]:
-                predictedTarget[obs][action[obs]] = reward[obs]
+                if(game != 'Pendulum-v0'):
+                     predictedTarget[obs][action[obs]] = reward[obs]
+                else:
+                    predictedTarget[obs] = reward[obs]
             else:
                 #Q-Learning use max value for target
-                predictedTarget[obs][action[obs]] = (reward[obs] + Gam * np.amax(actualTarget[obs]))
-
+                if(game != 'Pendulum-v0'):
+                    predictedTarget[obs][action[obs]] = (reward[obs] + Gam * np.amax(actualTarget[obs]))
+                else:
+                    predictedTarget[obs] = (reward[obs] + Gam * np.amax(actualTarget[obs]))
 
         self.onlineModel.fit(inputState, predictedTarget, batch_size=numObservations, epochs=1, verbose=0)
 
@@ -235,7 +240,7 @@ def train(game, bot, renderTraining):
             if(game != 'Acrobot-v1'):
                 score += reward
             else:
-                score += 1
+                score += reward
             state = nextState
 
             #If game over
@@ -258,7 +263,12 @@ def train(game, bot, renderTraining):
                 positions.append(position)
                 steps.append(step)
                 times.append(epi)
-
+                
+                if(game == 'Acrobot-v1'):
+                    if all(i >= -100 for i in scores[-20:]):
+                        print("Completed training!")
+                        return bot, scores, positions, steps, times
+                
                 if(game == 'CartPole-v1'):
                     #if succeeded 10 times in a row
                     if np.mean(scores[-min(10, len(scores)):]) > 495:
@@ -272,7 +282,7 @@ def train(game, bot, renderTraining):
                         return bot, scores, positions, steps, times
 
                 if(game == 'Pendulum-v0'):
-                    if all(i >= -200 for i in scores[-20:]):
+                    if all(i >= -100 for i in scores[-20:]):
                         print("Completed training!")
                         return bot, scores, positions, steps, times
 
@@ -294,10 +304,11 @@ if __name__ == "__main__":
 
     #Settings:
 #    game = 'CartPole-v1'
-    # game = 'Pendulum-v0'
+    game = 'Pendulum-v0'
 #    game = 'InvertedPendulum-v2'
-    game = 'MountainCar-v0'
+#    game = 'MountainCar-v0'
 #    game = 'MountainCarContinuous-v0'
+#    game = 'Acrobot-v1'
 
     renderTraining = False
 
