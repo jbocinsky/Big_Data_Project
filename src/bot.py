@@ -10,7 +10,7 @@ from gym import wrappers
 from collections import deque
 from keras.models import Sequential
 from keras.optimizers import Adam
-from keras.layers import Dense, Conv1D, Dropout, Flatten
+from keras.layers import Dense, Conv1D, Dropout, Flatten, Input
 from keras.utils import plot_model
 
 Gam = 0.99
@@ -31,12 +31,65 @@ class Agent:
         self.startTraining = 1000
 
         #Make online and target model
+#        self_actor_obs_space, self.actor_critic = self.create_actor_model()
+#        self_actor_obs_space, self.actor_critic = self.create_actor_model()
+
+        
         self.onlineModel = self.constructModel()
         self.targetModel = self.constructModel()
 
         #Copy weights from online to target model
         self.updateTargetModel()
         
+#    def create_actor_model(self):
+#        #First Hidden layer (Input going to Hidden)
+#        input = Input(shape = self.env.observation_space.shape)
+#        model = Sequential([Dense(24, activation='relu', shape = self.env.observation_space.shape)])
+#        # model.add(Dropout(0.2))
+#
+#        # Second Hidden layer
+#        model.add(Dense(36, activation='relu'))
+#        # model.add(Dropout(0.2))
+#
+#
+#        # Third Hidden layer
+#        model.add(Dense(24, activation='relu'))
+#        # model.add(Dropout(0.2))
+#
+#
+##        #Sixth Output Layer
+#        model.add(Dense(self.acSize, activation='linear', kernel_initializer='he_uniform'))
+#
+##        model.summary()
+#        #mean square error
+#        model.compile(loss='mse', optimizer=Adam(lr=LRate))
+#        return input, model
+
+#    def create_critic_model(self):
+#        #First Hidden layer (Input going to Hidden)
+#        input = Input(shape = self.env.observation_space.shape)
+#        model = Sequential([Dense(24, activation='relu')(input)])
+#        # model.add(Dropout(0.2))
+#
+#        # Second Hidden layer
+#        model.add(Dense(36, activation='relu'))
+#        # model.add(Dropout(0.2))
+#        act_in = Input(shape = self.env.observation_space.shape)
+#
+#
+#
+#        # Third Hidden layer
+#        model.add(Dense(24, activation='relu'))
+#        # model.add(Dropout(0.2))
+#
+#
+##        #Sixth Output Layer
+#        model.add(Dense(self.acSize, activation='linear', kernel_initializer='he_uniform'))
+#
+##        model.summary()
+#        #mean square error
+#        model.compile(loss='mse', optimizer=Adam(lr=LRate))
+#        return input, act_in, model
 
     def constructModel(self):
         #First Hidden layer (Input going to Hidden)
@@ -69,6 +122,7 @@ class Agent:
         #mean square error
         model.compile(loss='mse', optimizer=Adam(lr=LRate))
         return model
+    
 
     def trainOnlineModel(self):
         #Ensure we've seen enough observations, before we start training
@@ -191,7 +245,7 @@ def train(game, bot, renderTraining):
                     act = rd.randrange(bot.acSize)
 
             #Take the action    
-            if(game == 'Pendulum-v0'):
+            if((game == 'Pendulum-v0') or (game == 'MountainCarContinuous-v0')):
                 nextState, reward, done, _ = env.step(np.array([act]))
             else:
                 nextState, reward, done, _ = env.step(act)
@@ -232,8 +286,10 @@ def train(game, bot, renderTraining):
                 tempPosition = state[0][0]
                 if(tempPosition > position):
                     position = tempPosition
-
-            score += reward
+            if(game != 'Acrobot-v1'):
+                score += reward
+            else:
+                score += 1
             state = nextState
 
             #If game over
@@ -291,17 +347,18 @@ def train(game, bot, renderTraining):
 if __name__ == "__main__":
 
     #Settings:
-    game = 'CartPole-v1'
+#    game = 'CartPole-v1'
     # game = 'Pendulum-v0'
-    # game = 'MountainCar-v0'
-    # game = 'Acrobot-v1'
+#    game = 'InvertedPendulum-v2'
+    game = 'MountainCar-v0'
+#    game = 'MountainCarContinuous-v0'
 
     renderTraining = False
 
     env = gym.make(game)
     env._max_episodes = maxGameFrames
     stateSize = env.observation_space.shape[0]
-    if(game != 'Pendulum-v0'):
+    if((game != 'Pendulum-v0') and (game != 'MountainCarContinuous-v0')):
         acSize = env.action_space.n
     else:
         acSize = env.action_space.shape[0]
@@ -337,26 +394,33 @@ if __name__ == "__main__":
     print('Average final score:', finalScoresMean)
 
 
-    #Plot results
-    plt.plot(times, scores)
-    plotTitle = game + ' Training Scores'
-    plt.title(plotTitle)
-    plt.xlabel('iterations')
-    plt.ylabel('scores')
-    plt.show()
+#    #Plot results
+#    plt.plot(times, scores)
+#    plotTitle = game + ' Training Scores'
+#    plt.title(plotTitle)
+#    plt.xlabel('iterations')
+#    plt.ylabel('scores')
+#    plt.show()
 
     if(game == 'MountainCar-v0'):
-        plt.plot(times, positions)
-        plotTitle = game + ' Position'
-        plt.title(plotTitle)
-        plt.xlabel('iterations')
-        plt.ylabel('position')
-        plt.show()
+#        plt.plot(times, positions)
+#        plotTitle = game + ' Position'
+#        plt.title(plotTitle)
+#        plt.xlabel('iterations')
+#        plt.ylabel('position')
+#        plt.show()
+#
+#        plt.plot(times, steps)
+#        plotTitle = game + ' Number of steps to win'
+#        plt.title(plotTitle)
+#        plt.xlabel('iterations')
+#        plt.ylabel('steps')
+#        plt.show()
 
-        plt.plot(times, steps)
-        plotTitle = game + ' Number of steps to win'
+        plt.plot(scores, steps)
+        plotTitle = game + ' Score per steps'
         plt.title(plotTitle)
-        plt.xlabel('iterations')
+        plt.xlabel('score')
         plt.ylabel('steps')
         plt.show()
 
