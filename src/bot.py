@@ -43,19 +43,19 @@ class Agent:
         model = Sequential([Dense(24, input_dim=self.stateSize)])
         # model.add(Dropout(0.2))
 
-        # Second Hidden layer
-        model.add(Dense(36, activation='relu'))
-        # model.add(Dropout(0.2))
+        # # Second Hidden layer
+        # model.add(Dense(36, activation='relu'))
+        # # model.add(Dropout(0.2))
 
 
-        # Third Hidden layer
-        model.add(Dense(48, activation='relu'))
-        # model.add(Dropout(0.2))
+        # # Third Hidden layer
+        # model.add(Dense(48, activation='relu'))
+        # # model.add(Dropout(0.2))
 
 
-        # Fourth Hidden layer
-        model.add(Dense(36, activation='relu'))
-        # model.add(Dropout(0.2))
+        # # Fourth Hidden layer
+        # model.add(Dense(36, activation='relu'))
+        # # model.add(Dropout(0.2))
 
 
         # Fifth Hidden layer
@@ -171,7 +171,7 @@ def train(game, bot, renderTraining):
         done = False
         score = 0
         step = 0
-        position = 0
+        position = -1
         state = env.reset()
         state = np.reshape(state, [1 , stateSize])
         
@@ -291,9 +291,9 @@ def train(game, bot, renderTraining):
 if __name__ == "__main__":
 
     #Settings:
-    game = 'CartPole-v1'
+    # game = 'CartPole-v1'
     # game = 'Pendulum-v0'
-    # game = 'MountainCar-v0'
+    game = 'MountainCar-v0'
     # game = 'Acrobot-v1'
 
     renderTraining = False
