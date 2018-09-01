@@ -10,7 +10,7 @@ from gym import wrappers
 from collections import deque
 from keras.models import Sequential
 from keras.optimizers import Adam
-from keras.layers import Dense, Conv1D, Dropout, Flatten
+from keras.layers import Dense, Conv1D, Dropout, Flatten, Input
 from keras.utils import plot_model
 
 Gam = 0.99
@@ -29,14 +29,13 @@ class Agent:
         self.acSize = acSize
         self.eps = 1.0
         self.startTraining = 1000
-
-        #Make online and target model
         self.onlineModel = self.constructModel()
         self.targetModel = self.constructModel()
 
         #Copy weights from online to target model
         self.updateTargetModel()
         
+
 
     def constructModel(self):
         #First Hidden layer (Input going to Hidden)
@@ -69,6 +68,7 @@ class Agent:
         #mean square error
         model.compile(loss='mse', optimizer=Adam(lr=LRate))
         return model
+    
 
     def trainOnlineModel(self):
         #Ensure we've seen enough observations, before we start training
@@ -102,11 +102,16 @@ class Agent:
 
         for obs in range(numObservations):
             if done[obs]:
-                predictedTarget[obs][action[obs]] = reward[obs]
+                if(game != 'Pendulum-v0'):
+                     predictedTarget[obs][action[obs]] = reward[obs]
+                else:
+                    predictedTarget[obs] = reward[obs]
             else:
                 #Q-Learning use max value for target
-                predictedTarget[obs][action[obs]] = (reward[obs] + Gam * np.amax(actualTarget[obs]))
-
+                if(game != 'Pendulum-v0'):
+                    predictedTarget[obs][action[obs]] = (reward[obs] + Gam * np.amax(actualTarget[obs]))
+                else:
+                    predictedTarget[obs] = (reward[obs] + Gam * np.amax(actualTarget[obs]))
 
         self.onlineModel.fit(inputState, predictedTarget, batch_size=numObservations, epochs=1, verbose=0)
 
@@ -191,7 +196,7 @@ def train(game, bot, renderTraining):
                     act = rd.randrange(bot.acSize)
 
             #Take the action    
-            if(game == 'Pendulum-v0'):
+            if((game == 'Pendulum-v0') or (game == 'MountainCarContinuous-v0')):
                 nextState, reward, done, _ = env.step(np.array([act]))
             else:
                 nextState, reward, done, _ = env.step(act)
@@ -232,8 +237,10 @@ def train(game, bot, renderTraining):
                 tempPosition = state[0][0]
                 if(tempPosition > position):
                     position = tempPosition
-
-            score += reward
+            if(game != 'Acrobot-v1'):
+                score += reward
+            else:
+                score += reward
             state = nextState
 
             #If game over
@@ -256,7 +263,12 @@ def train(game, bot, renderTraining):
                 positions.append(position)
                 steps.append(step)
                 times.append(epi)
-
+                
+                if(game == 'Acrobot-v1'):
+                    if all(i >= -100 for i in scores[-20:]):
+                        print("Completed training!")
+                        return bot, scores, positions, steps, times
+                
                 if(game == 'CartPole-v1'):
                     #if succeeded 10 times in a row
                     if np.mean(scores[-min(10, len(scores)):]) > 495:
@@ -291,17 +303,19 @@ def train(game, bot, renderTraining):
 if __name__ == "__main__":
 
     #Settings:
-    # game = 'CartPole-v1'
+    game = 'CartPole-v1'
     # game = 'Pendulum-v0'
-    game = 'MountainCar-v0'
-    # game = 'Acrobot-v1'
+    #game = 'InvertedPendulum-v2'
+    #game = 'MountainCar-v0'
+#    game = 'MountainCarContinuous-v0'
+#    game = 'Acrobot-v1'
 
-    renderTraining = False
+    renderTraining = True
 
     env = gym.make(game)
     env._max_episodes = maxGameFrames
     stateSize = env.observation_space.shape[0]
-    if(game != 'Pendulum-v0'):
+    if((game != 'Pendulum-v0') and (game != 'MountainCarContinuous-v0')):
         acSize = env.action_space.n
     else:
         acSize = env.action_space.shape[0]
@@ -357,6 +371,13 @@ if __name__ == "__main__":
         plotTitle = game + ' Number of steps to win'
         plt.title(plotTitle)
         plt.xlabel('iterations')
+        plt.ylabel('steps')
+        plt.show()
+
+        plt.plot(scores, steps)
+        plotTitle = game + ' Score per steps'
+        plt.title(plotTitle)
+        plt.xlabel('score')
         plt.ylabel('steps')
         plt.show()
 
