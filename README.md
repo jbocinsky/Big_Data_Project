@@ -1,5 +1,5 @@
 # Big_Data_Project
-Deep Q-Learning (DQN) applied to openAI gym's classic control games
+Deep Double Q-Learning (DQN) applied to openAI gym's classic control games
 
 You must import openAI's gym and have python 3.5 or greater installed.
 To import openAI's gym please go to the webpage: https://gym.openai.com/docs/#getting-started-with-gym
